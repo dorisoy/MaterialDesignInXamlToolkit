@@ -34,6 +34,8 @@ namespace MaterialDesignThemes.WinUI
 
             PointerExited += Ripple_PointerExited;
             PointerPressed += Ripple_PointerPressed;
+            Tapped += Ripple_Tapped;
+            DoubleTapped += Ripple_DoubleTapped; ;
 
             //AddHandler(PointerReleasedEvent, Foo, true);
             //AddHandler(PointerCanceledEvent, Foo, true);
@@ -43,41 +45,44 @@ namespace MaterialDesignThemes.WinUI
             PointerReleased += EndPointerEvent;
         }
 
-        private void Ripple_PointerExited(object sender, PointerRoutedEventArgs e)
+        private void Ripple_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            VisualStateManager.GoToState(this, TemplateStateMouseOut, true);
+            RippleEnd();
         }
 
-        private static void EndPointerEvent(object sender, PointerRoutedEventArgs e)
+        private void Ripple_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            Debug.WriteLine("Ripple Releases");
+            RippleEnd();
+        }
 
-            foreach (var ripple in PressedInstances)
+        private void Ripple_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            RippleEnd();
+        }
+
+        private void RippleEnd()
+        {
+            // adjust the transition scale time according to the current animated scale
+            var scaleTrans = GetTemplateChild("ScaleTransform") as ScaleTransform;
+            if (scaleTrans != null)
             {
-                // adjust the transition scale time according to the current animated scale
-                var scaleTrans = ripple.GetTemplateChild("ScaleTransform") as ScaleTransform;
-                if (scaleTrans != null)
+                double currentScale = scaleTrans.ScaleX;
+                var newTime = TimeSpan.FromMilliseconds(300 * (1.0 - currentScale));
+
+                // change the scale animation according to the current scale
+                var scaleXKeyFrame = GetTemplateChild("MousePressedToNormalScaleXKeyFrame") as EasingDoubleKeyFrame;
+                if (scaleXKeyFrame != null)
                 {
-                    double currentScale = scaleTrans.ScaleX;
-                    var newTime = TimeSpan.FromMilliseconds(300 * (1.0 - currentScale));
-
-                    // change the scale animation according to the current scale
-                    var scaleXKeyFrame = ripple.GetTemplateChild("MousePressedToNormalScaleXKeyFrame") as EasingDoubleKeyFrame;
-                    if (scaleXKeyFrame != null)
-                    {
-                        scaleXKeyFrame.KeyTime = KeyTime.FromTimeSpan(newTime);
-                    }
-                    var scaleYKeyFrame = ripple.GetTemplateChild("MousePressedToNormalScaleYKeyFrame") as EasingDoubleKeyFrame;
-                    if (scaleYKeyFrame != null)
-                    {
-                        scaleYKeyFrame.KeyTime = KeyTime.FromTimeSpan(newTime);
-                    }
+                    scaleXKeyFrame.KeyTime = KeyTime.FromTimeSpan(newTime);
                 }
-
-                VisualStateManager.GoToState(ripple, TemplateStateNormal, true);
-                //ripple.ReleasePointerCapture(e.Pointer);
+                var scaleYKeyFrame = GetTemplateChild("MousePressedToNormalScaleYKeyFrame") as EasingDoubleKeyFrame;
+                if (scaleYKeyFrame != null)
+                {
+                    scaleYKeyFrame.KeyTime = KeyTime.FromTimeSpan(newTime);
+                }
             }
-            PressedInstances.Clear();
+
+            VisualStateManager.GoToState(this, TemplateStateNormal, true);
         }
 
         public static readonly DependencyProperty FeedbackProperty = DependencyProperty.Register(
@@ -91,8 +96,6 @@ namespace MaterialDesignThemes.WinUI
 
         private void Ripple_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            Debug.WriteLine("Ripple Pressed");
-            e.Handled = false;
             if (RippleAssist.GetIsCentered(this))
             {
                 var innerContent = Content as FrameworkElement;
@@ -123,12 +126,8 @@ namespace MaterialDesignThemes.WinUI
 
             if (!RippleAssist.GetIsDisabled(this))
             {
-                //We need to capture to get the PointerReleased event
-                //But this also appears to prevent the click from propogating up
                 VisualStateManager.GoToState(this, TemplateStateNormal, false);
                 VisualStateManager.GoToState(this, TemplateStateMousePressed, true);
-                PressedInstances.Add(this);
-                //await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => CapturePointer(e.Pointer));
             }
         }
 
