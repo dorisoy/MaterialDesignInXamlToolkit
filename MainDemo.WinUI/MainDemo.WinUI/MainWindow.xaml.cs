@@ -12,7 +12,7 @@ namespace MainDemo.WinUI
     {
         public MainWindow()
         {
-            this.InitializeComponent();
+            InitializeComponent();
         }
 
         private int _counter;

@@ -23,4 +23,9 @@
     <PackageReference Include="Microsoft.ProjectReunion.WinUI" Version="0.5.5" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MaterialDesignThemes.WinUI\MaterialDesignThemes.WinUI.csproj" />
+  </ItemGroup>
 </Project>
