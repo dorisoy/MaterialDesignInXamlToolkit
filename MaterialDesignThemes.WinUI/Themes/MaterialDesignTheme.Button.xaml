@@ -7,6 +7,7 @@
     <SolidColorBrush x:Key="PrimaryHueMidForegroundBrush" Color="White" />
 
     <Style x:Key="MaterialDesignRaisedButton" TargetType="ButtonBase">
+        <Setter Property="UseSystemFocusVisuals" Value="False"/>
         <Setter Property="Background" Value="{StaticResource PrimaryHueMidBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource PrimaryHueMidBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidForegroundBrush}"/>

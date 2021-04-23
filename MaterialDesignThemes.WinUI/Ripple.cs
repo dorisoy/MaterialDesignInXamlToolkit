@@ -6,9 +6,11 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Windows.Foundation;
+using Windows.UI.Core;
 
 namespace MaterialDesignThemes.WinUI
 {
@@ -23,22 +25,33 @@ namespace MaterialDesignThemes.WinUI
 
         private static readonly HashSet<Ripple> PressedInstances = new();
 
+       private PointerEventHandler Foo = new PointerEventHandler(EndPointerEvent);
         public Ripple()
         {
             DefaultStyleKey = typeof(Ripple);
 
             SizeChanged += OnSizeChanged;
 
-            PointerMoved += PointerMoveEventHandler;
+            PointerExited += Ripple_PointerExited;
             PointerPressed += Ripple_PointerPressed;
 
-            PointerCanceled += EndPointerEvent;
-            PointerCaptureLost += EndPointerEvent;
+            //AddHandler(PointerReleasedEvent, Foo, true);
+            //AddHandler(PointerCanceledEvent, Foo, true);
+            //AddHandler(PointerCaptureLostEvent, Foo, true);
+            //PointerCanceled += EndPointerEvent;
+            //PointerCaptureLost += EndPointerEvent;
             PointerReleased += EndPointerEvent;
+        }
+
+        private void Ripple_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            VisualStateManager.GoToState(this, TemplateStateMouseOut, true);
         }
 
         private static void EndPointerEvent(object sender, PointerRoutedEventArgs e)
         {
+            Debug.WriteLine("Ripple Releases");
+
             foreach (var ripple in PressedInstances)
             {
                 // adjust the transition scale time according to the current animated scale
@@ -62,25 +75,9 @@ namespace MaterialDesignThemes.WinUI
                 }
 
                 VisualStateManager.GoToState(ripple, TemplateStateNormal, true);
-                ripple.ReleasePointerCapture(e.Pointer);
+                //ripple.ReleasePointerCapture(e.Pointer);
             }
             PressedInstances.Clear();
-        }
-
-        private void PointerMoveEventHandler(object sender, PointerRoutedEventArgs e)
-        {
-            foreach (var ripple in PressedInstances.ToList())
-            {
-                Point relativePosition = e.GetCurrentPoint(ripple).Position;
-                if (relativePosition.X < 0
-                    || relativePosition.Y < 0
-                    || relativePosition.X >= ripple.ActualWidth
-                    || relativePosition.Y >= ripple.ActualHeight)
-                {
-                    VisualStateManager.GoToState(ripple, TemplateStateMouseOut, true);
-                    PressedInstances.Remove(ripple);
-                }
-            }
         }
 
         public static readonly DependencyProperty FeedbackProperty = DependencyProperty.Register(
@@ -94,6 +91,8 @@ namespace MaterialDesignThemes.WinUI
 
         private void Ripple_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
+            Debug.WriteLine("Ripple Pressed");
+            e.Handled = false;
             if (RippleAssist.GetIsCentered(this))
             {
                 var innerContent = Content as FrameworkElement;
@@ -126,10 +125,10 @@ namespace MaterialDesignThemes.WinUI
             {
                 //We need to capture to get the PointerReleased event
                 //But this also appears to prevent the click from propogating up
-                //CapturePointer(e.Pointer);
                 VisualStateManager.GoToState(this, TemplateStateNormal, false);
                 VisualStateManager.GoToState(this, TemplateStateMousePressed, true);
                 PressedInstances.Add(this);
+                //await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => CapturePointer(e.Pointer));
             }
         }
 
